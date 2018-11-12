@@ -3,17 +3,17 @@ This is a single page application using React and Google API. User can search th
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## APIs used
-1- FourSquare API
-2- Google Maps API
+- FourSquare API
+- Google Maps API
 
-##project dependencies
+## project dependencies
 - npm install
 - npm install axios --save
 - npm install escape-string-regexp --save
 
-# Credits
-[Udacity | Neighborhood Map - Project Explained](https://www.youtube.com/playlist?list=PLgOB68PvvmWCGNn8UMTpcfQEiITzxEEA1) by Yahya Elharony.
-[Google Map documentation](https://developers.google.com/maps/documentation)
+## Credits
+- [Udacity | Neighborhood Map - Project Explained](https://www.youtube.com/playlist?list=PLgOB68PvvmWCGNn8UMTpcfQEiITzxEEA1) by Yahya Elharony.
+- [Google Map documentation](https://developers.google.com/maps/documentation)
 
 
 
