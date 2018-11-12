@@ -7,7 +7,6 @@ class Navbar extends Component {
         const { clickHandler, searchHanlder, updateQuery} = this.props;
         return (
             <nav className="navbar-primary navbar-light bg-light">
-            {/* <a className="navbar-brand">Neighborhood Map</a> */}
                 <SearchBar onChange={searchHanlder} updateQuery={updateQuery}/>
               <ul className="navbar-primary-menu">
               
