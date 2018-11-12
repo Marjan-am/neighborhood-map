@@ -1,13 +1,22 @@
 import React, { Component } from 'react';
 import './App.css';
 import axios from "axios";
+import Navbar from "./Navbar";
+import escapeRegExp from 'escape-string-regexp';
+
 
 class App extends Component {
 
-state =  {
-  venues: []
-}
-  componentDidMount() {
+  state =  {
+    venues: [],
+    markers: [],
+    contents: [],
+    query: '',
+    notVisibleMarkers: [],
+    originalVenues: []
+  }
+
+  componentDidMount () {
     this.getVenues();
   }
 
@@ -23,74 +32,139 @@ state =  {
     const parameters = {
       client_id : "GZMVVG2WEA2M3VVKAVGXTSMKACFFZLZHMUSVYBGKUTDBTI1M",
       client_secret: "W5IKT542C1IOCMDMORI0YHDRIT2QLN2U4KT3E0ESWQ3XF3O4",
-      near: "Sydney",
-      query: "food",
-      v: "20182507"
+      near: "Escondido",
+      query: "shops",
+      limit: 8,
+      v: "20181105"
     }
 
     axios.get(endPoint + new URLSearchParams(parameters))
       .then(response => {
         this.setState({
           //Storing all places in state array
-
-          venues: response.data.response.groups[0].items
-        },  this.mapLoader())
+          venues: response.data.response.groups[0].items, 
+          originalVenues: response.data.response.groups[0].items      
+          },  this.mapLoader())
       // handle success
-        console.log(response);
-     }).catch(error => {
+            console.log(response);
+            
+         }).catch(error => {
       // handle error
-      console.log(error);
-    })
+          alert(`Fetching data from Foursquare was not possible!`)
+          console.log("Error! " + error)
+        })
+  }
+  
+  createInfoWindow = () => {
+    this.infoWindow = new window.google.maps.InfoWindow();
+  }
+
+  createMap = () => {
+    this.map = new window.google.maps.Map(document.getElementById('map'), {
+      center: { lat:  33.133648, lng: -117.073223 },
+      zoom: 10
+    });
+  }
+
+  createVenueContent = (v, index) => {
+    const { location, id, name, photos } = v.venue;
+    var contentString = '<div id="content">'+
+    '</div>'+
+    '<h3>'+ name +'</h3>'+
+    '<div id="bodyContent">'+
+    '<p><b>Address: </b>'+ location.address +'</p>'+
+    '<p><b>City: </b>'+ location.city +'</p>'+
+    '<p><b>Country: </b>'+ location.country +'</p>'+
+    '</div>';
+
+    return contentString;
+  }
+
+  createVenueMarker = (v, index) => {
+    const marker = new window.google.maps.Marker({
+      position: { lat: v.venue.location.lat, lng: v.venue.location.lng },
+      title: v.venue.name,
+      id: v.venue.id
+    });
+
+    marker.addListener('click', () => {
+      this.clickHandler(index);
+    });
+
+    return marker;
   }
 
   initMap = () => {
-    var map = new window.google.maps.Map(document.getElementById('map'), {
-      center: {lat: -34.397, lng: 150.644},
-      zoom: 8
-    });
-    var contentString = '<div id="content">'+
-    '<div id="siteNotice">'+
-    '</div>'+
-    '<h1 id="firstHeading" class="firstHeading">Uluru</h1>'+
-    '<div id="bodyContent">'+
-    '<p><b>Uluru</b>, also referred to as <b>Ayers Rock</b>, is a large ' +
-    'sandstone rock formation in the southern part of the '+
-    'Northern Territory, central Australia. It lies 335&#160;km (208&#160;mi) '+
-    'south west of the nearest large town, Alice Springs; 450&#160;km '+
-    '(280&#160;mi) by road. Kata Tjuta and Uluru are the two major '+
-    'features of the Uluru - Kata Tjuta National Park. Uluru is '+
-    'sacred to the Pitjantjatjara and Yankunytjatjara, the '+
-    'Aboriginal people of the area. It has many springs, waterholes, '+
-    'rock caves and ancient paintings. Uluru is listed as a World '+
-    'Heritage Site.</p>'+
-    '<p>Attribution: Uluru, <a href="https://en.wikipedia.org/w/index.php?title=Uluru&oldid=297882194">'+
-    'https://en.wikipedia.org/w/index.php?title=Uluru</a> '+
-    '(last visited June 22, 2009).</p>'+
-    '</div>'+
-    '</div>';
+    const { venues } = this.state;
 
-    var infowindow = new window.google.maps.InfoWindow({
-      content: contentString
+    // Create map and store on the component instance variable
+    this.createMap();
+
+    // Creating the infoWindow and store the reference in instance variable
+    this.createInfoWindow();
+
+    // Markers
+    const markers = venues.map((eachVenue, index) => this.createVenueMarker(eachVenue, index));
+
+    // Contents
+    const contents = venues.map((eachVenue, index) => this.createVenueContent(eachVenue, index));
+
+    this.setState({
+      markers: markers,
+      contents: contents,
     });
-  
-    //Creating markers
-    this.state.venues.map(eachVenue => {
-      var marker = new window.google.maps.Marker({
-        position: {lat: eachVenue.venue.location.lat, lng: eachVenue.venue.location.lng},
-        map: map,
-        title: eachVenue.venue.name
-      })
-      //Info window
-      marker.addListener('click', function() {
-        infowindow.open(map, marker);
-      })
-    })
+
+    markers.forEach(m => m.setMap(this.map));
+
+  }
+
+  clickHandler = (venueIndex) => {
+    const { contents, markers } = this.state;
+    this.infoWindow.setContent(contents[venueIndex]);
+    this.infoWindow.open(this.map, markers[venueIndex]);
+  };
+
+  updateQuery = query => {
+    this.setState({ query })
+    this.state.markers.map(marker => marker.setVisible(true))
+    let filterVenues
+    let notVisibleMarkers
+
+    if (query) {
+      const match = new RegExp(escapeRegExp(query), "i")
+      filterVenues = this.state.venues.filter(myVenue =>
+        match.test(myVenue.venue.name)
+      )
+      this.setState({ venues: filterVenues })
+        notVisibleMarkers = this.state.markers.filter(marker =>
+        filterVenues.every(myVenue => myVenue.venue.name !== marker.title)
+      )
+
+    
+      //Hiding the markers for venues 
+   
+      notVisibleMarkers.forEach(marker => marker.setVisible(false))
+
+      this.setState({ notVisibleMarkers })
+    } else {
+      
+      this.setState({ venues: this.state.originalVenues})
+      this.state.markers.forEach(marker => marker.setVisible(true))
+    }
   }
 
   render() {
+    console.log("state ", this.state);
+    const { venues } = this.state;
+  
     return (
-      <main>
-        <div id="map"></div>
+      <main className="container-fluid"> 
+       <Navbar         
+          updateQuery={this.updateQuery}
+          venues={venues}
+          filteredVenues={this.filteredVenues}
+          clickHandler={this.clickHandler} />
+        <div id="map" role="application" aria-label="Map" ></div>
       </main>
     );
   }
@@ -106,3 +180,4 @@ function scriptLoader (url) {
 }
 
 export default App;
+
