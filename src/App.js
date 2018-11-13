@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import escapeRegExp from 'escape-string-regexp';
 
 
+
 class App extends Component {
 
   state =  {
@@ -67,7 +68,7 @@ class App extends Component {
   }
 
   createVenueContent = (v, index) => {
-    const { location, id, name, photos } = v.venue;
+    const { location, name,} = v.venue;
     var contentString = '<div id="content">'+
     '</div>'+
     '<h3>'+ name +'</h3>'+
@@ -83,10 +84,11 @@ class App extends Component {
   createVenueMarker = (v, index) => {
     const marker = new window.google.maps.Marker({
       position: { lat: v.venue.location.lat, lng: v.venue.location.lng },
+      animation: window.google.maps.Animation.DROP,
       title: v.venue.name,
       id: v.venue.id
     });
-
+  
     marker.addListener('click', () => {
       this.clickHandler(index);
     });
@@ -116,12 +118,26 @@ class App extends Component {
 
     markers.forEach(m => m.setMap(this.map));
 
+  }  //End of initMap
+
+  handleBounce = (venueIndex) => {
+    const { markers } = this.state;
+    markers.map((m, index) => {
+      if (index === venueIndex) {
+        m.setAnimation(window.google.maps.Animation.BOUNCE);
+        setTimeout(function(){ m.setAnimation(null) }, 550)
+      } else {
+        m.setAnimation(null);
+      }
+    });
   }
 
   clickHandler = (venueIndex) => {
     const { contents, markers } = this.state;
+    this.handleBounce(venueIndex);
     this.infoWindow.setContent(contents[venueIndex]);
     this.infoWindow.open(this.map, markers[venueIndex]);
+    
   };
 
   updateQuery = query => {
@@ -140,7 +156,6 @@ class App extends Component {
         filterVenues.every(myVenue => myVenue.venue.name !== marker.title)
       )
 
-    
       //Hiding the markers for venues 
    
       notVisibleMarkers.forEach(marker => marker.setVisible(false))
@@ -154,19 +169,24 @@ class App extends Component {
   }
 
   render() {
-    console.log("state ", this.state);
-    const { venues } = this.state;
-  
-    return (
-      <main className="container-fluid"> 
-       <Navbar         
-          updateQuery={this.updateQuery}
-          venues={venues}
-          filteredVenues={this.filteredVenues}
-          clickHandler={this.clickHandler} />
-        <div id="map" role="application" aria-label="Map" ></div>
-      </main>
-    );
+    if (this.state.hasError) {
+      return <div id="Error-message" aria-label="Error message">Sorry, something went wrong!</div>
+    } else {
+
+        console.log("state ", this.state);
+        const { venues } = this.state;
+      
+        return (
+          <main className="container-fluid"> 
+          <Navbar         
+              updateQuery={this.updateQuery}
+              venues={venues}
+              filteredVenues={this.filteredVenues}
+              clickHandler={this.clickHandler} />
+            <div id="map" role="application" aria-label="Map" ></div>
+          </main>
+     );
+    }
   }
 }
 
@@ -177,6 +197,9 @@ function scriptLoader (url) {
   script.async = true;
   script.defer = true;
   index.parentNode.insertBefore(script,index);
+  script.onerror = function() {
+    alert("Error loading map! Check the URL!");
+  };
 }
 
 export default App;

@@ -15,5 +15,6 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 - [Udacity | Neighborhood Map - Project Explained](https://www.youtube.com/playlist?list=PLgOB68PvvmWCGNn8UMTpcfQEiITzxEEA1) by Yahya Elharony.
 - [Google Map documentation](https://developers.google.com/maps/documentation)
 
-
+## Important
+Please note that the Service Worker providing offline capabilities works only in the production build.
 
